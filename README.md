@@ -27,4 +27,4 @@ The controls are
 - "-" to remove an event
 - "/" to filter events
 
-The rest of the controls are what you would expect, up/down/left/right to traverse the list, tab to move between fields in the event input form.
+The rest of the controls are what you would expect, up/down to traverse the list, tab to move between fields in the event input form.
