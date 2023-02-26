@@ -1,5 +1,5 @@
 # countdown
-Countdown is terminal based multi-event countdown timer. It uses the [Bubble Tea](https://github.com/charmbracelet/bubbletea) TUI framwework from [Charm_](https://charm.sh/).
+Countdown is terminal based multi-event countdown timer. It uses the [Bubble Tea](https://github.com/charmbracelet/bubbletea) TUI framework from [Charm_](https://charm.sh/).
 
 
 
