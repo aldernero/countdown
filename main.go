@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -28,7 +29,8 @@ const (
 	defaultDetailWidth = 45
 	defaultInputWidth  = 22
 	defaultHelpHeight  = 4
-	eventsFile         = "events.json"
+	appName            = "countdown"
+	eventsFileName     = "events.json"
 	inputTimeFormShort = "2006-01-02"
 	inputTimeFormLong  = "2006-01-02 15:04:05"
 	cError             = "#CF002E"
@@ -45,6 +47,21 @@ const (
 	cDimmedDescLight   = "#555555"
 	cTextLightGray     = "#FFFDF5"
 )
+
+// getEventsFilePath returns the path to the events file in the user's config directory
+func getEventsFilePath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user config directory: %w", err)
+	}
+
+	appConfigDir := filepath.Join(configDir, appName)
+	if err := os.MkdirAll(appConfigDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	return filepath.Join(appConfigDir, eventsFileName), nil
+}
 
 var AppStyle = lipgloss.NewStyle().Margin(0, 1)
 var TitleStyle = lipgloss.NewStyle().
@@ -431,6 +448,11 @@ func countdownParser(ts int64) string {
 }
 
 func readEventsFile() ([]Event, error) {
+	eventsFile, err := getEventsFilePath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get events file path: %w", err)
+	}
+
 	var events []Event
 	if _, err := os.Stat(eventsFile); errors.Is(err, os.ErrNotExist) {
 		// create file
@@ -444,10 +466,10 @@ func readEventsFile() ([]Event, error) {
 		if err != nil {
 			return events, err
 		}
-		err = ioutil.WriteFile(eventsFile, bytes, 0644)
+		err = os.WriteFile(eventsFile, bytes, 0644)
 		return events, err
 	}
-	bytes, err := ioutil.ReadFile(eventsFile)
+	bytes, err := os.ReadFile(eventsFile)
 	if err != nil {
 		return events, err
 	}
@@ -459,6 +481,11 @@ func readEventsFile() ([]Event, error) {
 }
 
 func (m MainModel) saveEventsToFile() error {
+	eventsFile, err := getEventsFilePath()
+	if err != nil {
+		return fmt.Errorf("failed to get events file path: %w", err)
+	}
+
 	items := m.events.Items()
 	events := make([]Event, len(items))
 	for i := range items {
@@ -468,7 +495,7 @@ func (m MainModel) saveEventsToFile() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(eventsFile, bytes, 0644)
+	err = os.WriteFile(eventsFile, bytes, 0644)
 	return err
 }
 
