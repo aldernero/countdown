@@ -17,8 +17,11 @@ or clone and build
 ```bash
 git clone https://github.com/aldernero/countdown.git
 cd countdown
-go build -o countdown main.go
+make build
 ```
+
+Prebuilt binaries for Linux, macOS, and Windows are also available on the
+[releases page](https://github.com/aldernero/countdown/releases).
 When you launch it for the first time an `events.json` file will be created in the user's system-defined config directory:
 
 - Linux: ~/.config/countdown/
@@ -37,5 +40,19 @@ The controls are
 - "+" to add an event
 - "-" to remove an event
 - "/" to filter events
+- "q" or ctrl+c to quit
 
 The rest of the controls are what you would expect, up/down to traverse the list, tab to move between fields in the event input form.
+
+## Development
+
+Common tasks are wrapped in the Makefile:
+
+```bash
+make test      # run tests with the race detector
+make lint      # run golangci-lint
+make build     # build the countdown binary
+make snapshot  # build a local release snapshot with goreleaser
+```
+
+Releases are published automatically by [GoReleaser](https://goreleaser.com/) via GitHub Actions when a `v*` tag is pushed.

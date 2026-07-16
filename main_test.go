@@ -7,51 +7,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/textinput"
 )
 
 // testHelper provides utilities for testing with config directories
 type testHelper struct {
-	originalConfigDir string
-	testConfigDir     string
+	testConfigDir string
 }
 
+// newTestHelper points the user config directory at a temporary directory.
+// Cleanup of the directory and environment is handled by the testing package.
 func newTestHelper(t *testing.T) *testHelper {
-	// Create a temporary directory for testing
-	testDir, err := os.MkdirTemp("", "countdown-test-*")
-	if err != nil {
-		t.Fatalf("Failed to create test directory: %v", err)
-	}
-
-	// Store original config dir environment variable
-	originalConfigDir := os.Getenv("XDG_CONFIG_HOME")
-
-	// Set test config directory
-	os.Setenv("XDG_CONFIG_HOME", testDir)
-
-	return &testHelper{
-		originalConfigDir: originalConfigDir,
-		testConfigDir:     testDir,
-	}
-}
-
-func (th *testHelper) cleanup() {
-	// Restore original environment
-	if th.originalConfigDir != "" {
-		os.Setenv("XDG_CONFIG_HOME", th.originalConfigDir)
-	} else {
-		os.Unsetenv("XDG_CONFIG_HOME")
-	}
-
-	// Clean up test directory
-	os.RemoveAll(th.testConfigDir)
+	t.Helper()
+	testDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", testDir)
+	return &testHelper{testConfigDir: testDir}
 }
 
 func (th *testHelper) removeEventsFile() {
-	eventsFile, err := getEventsFilePath()
-	if err == nil {
-		os.Remove(eventsFile)
+	if eventsFile, err := getEventsFilePath(); err == nil {
+		_ = os.Remove(eventsFile)
 	}
 }
 
@@ -176,7 +152,7 @@ func TestCountdownParser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := countdownParser(tt.target.Unix())
 			if tt.name == "Future event - seconds only" {
-				if !(result == "45s" || result == "44s") {
+				if result != "45s" && result != "44s" {
 					t.Errorf("Expected '45s' or '44s', got '%s'", result)
 				}
 				return
@@ -321,7 +297,6 @@ func TestReadEventsFile(t *testing.T) {
 	t.Run("Non-existent file", func(t *testing.T) {
 		// Remove the file if it exists
 		th := newTestHelper(t)
-		defer th.cleanup()
 		th.removeEventsFile()
 
 		events, err := readEventsFile()
@@ -345,7 +320,6 @@ func TestReadEventsFile(t *testing.T) {
 	t.Run("Existing file", func(t *testing.T) {
 		// Create a test events file
 		th := newTestHelper(t)
-		defer th.cleanup()
 		th.removeEventsFile()
 
 		testEvents := []Event{
@@ -382,10 +356,12 @@ func TestReadEventsFile(t *testing.T) {
 func TestMainModelInitialization(t *testing.T) {
 	// Remove events file to test default initialization
 	th := newTestHelper(t)
-	defer th.cleanup()
 	th.removeEventsFile()
 
-	model := NewMainModel()
+	model, err := NewMainModel()
+	if err != nil {
+		t.Fatalf("NewMainModel() failed: %v", err)
+	}
 
 	// Test initial state
 	if model.state != showEvents {
@@ -410,7 +386,6 @@ func TestMainModelInitialization(t *testing.T) {
 
 func TestGetEventsFilePath(t *testing.T) {
 	th := newTestHelper(t)
-	defer th.cleanup()
 
 	// Test that the function returns a valid path
 	eventsPath, err := getEventsFilePath()
